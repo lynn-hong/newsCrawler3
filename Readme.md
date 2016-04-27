@@ -1,4 +1,8 @@
-..contents::
+============
+NewsCrawler3
+============
+
+.. contents::
 Naver와 KINDS 뉴스 DB에서 뉴스 본문과 메타데이터를 수집하는 모듈입니다.
 (Naver news의 경우는 댓글도 수집)
 
@@ -33,10 +37,12 @@ Quick start
 --------------------
 * First, open ``main.py`` script and add the location ``newsCrawler3`` is in. You should add the parent directory of ``newsCrawler3``.
 
+.. code:: python
+
     $ sys.path.append('parent directory of <newsCrawler3>')
 
 
-* You can start crawling using the code below in 'newsCrawlerMain' directory.
+* You can start crawling using the code below in 'newsCrawlerMain' directory.::
 
     $ python3 main.py
 
