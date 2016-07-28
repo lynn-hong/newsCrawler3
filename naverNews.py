@@ -37,7 +37,12 @@ class NaverNews(NewsCrawler):
                 if err_code != 1:
                     print("Can't load the page %i" % page)
                     continue
-                resultCheck = soup.find('div', {'class': 'result_header'}).find('span', {'class': 'result_num'}).text.strip()
+                try:
+                    resultCheck = soup.find('div', {'class': 'result_header'}).find('span', {'class': 'result_num'}).text.strip()
+                except Exception as e:
+                    print(e)
+                    print("There's a problem with page %i" % page)
+                    continue
                 entireCnt = int(re.search(r"\(.+ / (\d+)건\)", resultCheck.replace(",", "")).group(1))
                 if entireCnt <= 4000 or start_date == end_date:
                     if start_date == end_date:
@@ -188,11 +193,17 @@ class NaverNews(NewsCrawler):
                 elif newsLink.startswith("http://sports.news.naver.com"):
                     return(90,)
                 else:
-                    redirect_url = soup.find('meta', {'property': 'og:url'})['content']
-                    if redirect_url.startswith("http://entertain.naver.com"):
-                        return(91,)      # just for now...
-                    else:
-                        print("Another naver child news site")
+                    try:
+                        redirect_url = soup.find('meta', {'property': 'og:url'})['content']
+                        if redirect_url.startswith("http://entertain.naver.com"):
+                            return(91,)      # just for now...
+                        else:
+                            print("Another naver child news site")
+                            print(newsLink)
+                            return(95,)
+                    except Exception as e:
+                        print("Another exception page...")
+                        print(e)
                         print(newsLink)
                         return(95,)
             press = soup.find('meta', {'property': 'me2:category1'})['content']
@@ -224,45 +235,59 @@ class NaverNews(NewsCrawler):
                     print(", %i" % page, end="")
             e_num, res = self.r.access_page(url % page, self.cnfDict['retry'], headers=headers)
             if e_num == 1:
-                t = re.search(r"window\.__cbox_jindo_callback\._8858\((.+)\)", res).group(1)
-                rdic = json.loads(t)['result']
-                if 'commentList' not in rdic.keys():
+                try:
+                    t = re.search(r"window\.__cbox_jindo_callback\._8858\((.+)\)", res).group(1)
+                    rdic = json.loads(t)['result']
+                    anch = True
+                except Exception as e:
+                    print(e)
+                    print("comment parsing error with gno %s..." % gno)
+                    anch = False
                     pass
+                if anch is True:
+                    if 'commentList' not in rdic.keys():
+                        pass
+                    else:
+                        for reply in rdic['commentList']:
+                            maskUserId = reply['maskedUserId']
+                            encodedUserId = reply['userIdNo']
+                            if encodedUserId is None:
+                                encodedUserId = ""
+                            commentReplyNo = reply['commentNo']
+                            sRegDate = reply['regTime']
+                            if "오전" in sRegDate:
+                                sRegDate = sRegDate.replace("오전", "AM")
+                            elif "오후" in sRegDate:
+                                sRegDate = sRegDate.replace("오후", "PM")
+                            sRegDate = datetime.strptime(sRegDate, "%Y-%m-%dT%H:%M:%S+0900")
+                            snsType = ""
+                            incomingType = ""
+                            badCnt = reply['antipathyCount']
+                            goodCnt = reply['sympathyCount']
+                            likeCnt = goodCnt-badCnt
+                            replyCnt = reply['replyCount']
+                            content = reply['contents'].replace("\n\r", " ").replace("\n", " ")
+                            if reply['best'] is False:
+                                isBest = 0
+                            elif reply['best'] is True:
+                                isBest = 1
+                            c_grade = ""
+                            c_pnt = 0
+                            c_nextGradePnt = 0
+                            var_sql_list.append("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
+                            var_tuple += (a_id, commentReplyNo, maskUserId, encodedUserId, sRegDate, content, badCnt, goodCnt, likeCnt, replyCnt, incomingType, snsType, isBest, c_grade, c_pnt, c_nextGradePnt)
                 else:
-                    for reply in rdic['commentList']:
-                        maskUserId = reply['maskedUserId']
-                        encodedUserId = reply['userIdNo']
-                        if encodedUserId is None:
-                            encodedUserId = ""
-                        commentReplyNo = reply['commentNo']
-                        sRegDate = reply['regTime']
-                        if "오전" in sRegDate:
-                            sRegDate = sRegDate.replace("오전", "AM")
-                        elif "오후" in sRegDate:
-                            sRegDate = sRegDate.replace("오후", "PM")
-                        sRegDate = datetime.strptime(sRegDate, "%Y-%m-%dT%H:%M:%S+0900")
-                        snsType = ""
-                        incomingType = ""
-                        badCnt = reply['antipathyCount']
-                        goodCnt = reply['sympathyCount']
-                        likeCnt = goodCnt-badCnt
-                        replyCnt = reply['replyCount']
-                        content = reply['contents'].replace("\n\r", " ").replace("\n", " ")
-                        if reply['best'] is False:
-                            isBest = 0
-                        elif reply['best'] is True:
-                            isBest = 1
-                        c_grade = ""
-                        c_pnt = 0
-                        c_nextGradePnt = 0
-                        var_sql_list.append("(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
-                        var_tuple += (a_id, commentReplyNo, maskUserId, encodedUserId, sRegDate, content, badCnt, goodCnt, likeCnt, replyCnt, incomingType, snsType, isBest, c_grade, c_pnt, c_nextGradePnt)
+                    pass
             else:
                 pass
-            if page < math.ceil(rdic['count']['comment']/20):
-                page += 1
-                time.sleep(0.1)
-            else:
+            try:
+                if page < math.ceil(rdic['count']['comment']/20):
+                    page += 1
+                    time.sleep(0.1)
+                else:
+                    break
+            except KeyError:
+                print("KeyError...")
                 break
         return(",".join(var_sql_list).strip(","), var_tuple)
 

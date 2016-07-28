@@ -18,7 +18,7 @@ class Mysql():
                 cfg_dict = dict(host=dbCnfDict['host'], usr=dbCnfDict['usr'],
                                 pwd=dbCnfDict['pwd'], db=dbCnfDict['project'])
                 self.easy_mysql(cfg_dict, encoding=dbCnfDict['encoding'], autocommit=True)       # turn-on autocummit, be careful!
-                self.cur.execute("SET NAMES utf8")
+                self.cur.execute("SET NAMES utf8mb4")
                 break
             except:     # if it fails, create project db and try to connect again
                 print("Start creating database...")
@@ -26,7 +26,7 @@ class Mysql():
                 cfg_dict = dict(host=dbCnfDict['host'], usr=dbCnfDict['usr'],
                                 pwd=dbCnfDict['pwd'], db='information_schema')
                 self.easy_mysql(cfg_dict, encoding=dbCnfDict['encoding'], autocommit=True)
-                self.cur.execute("CREATE DATABASE IF NOT EXISTS `%s` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci */;" % dbCnfDict['project'])
+                self.cur.execute("CREATE DATABASE IF NOT EXISTS `%s` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */;" % dbCnfDict['project'])
                 self.cur.execute(schema % (dbCnfDict['project'], dbCnfDict['project']))        # use project db and create tables
                 time.sleep(8)
 
