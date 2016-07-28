@@ -45,7 +45,6 @@ Then close the prompt using `exit()` and run `main.py` script.
 ## Quick start
 First, open ``main.py`` script and add the location ``newsCrawler3`` is in. You should add the parent directory of ``newsCrawler3``.
 
-
 ```
     $ sys.path.append('parent directory of <newsCrawler3>')
 ```
@@ -55,6 +54,19 @@ You can start crawling by using the code below in 'newsCrawlerMain' directory
     $ python3 main.py
 ```
 
-It will automatically create a database if the target db doesn't exist
+`main.py` script looks like below.
+```
+    import sys
+    sys.path.append('<PATH WHERE newsCrawler3 IN>')
+    from newsCrawler3 import newsCrawler
+    
+    nc = newsCrawler.NewsCrawler()
+    nc.setCnf("./cnf/main.cnf")
+    nc.start_work()
+    
+    print("\nAll finished")
+```
+
+It will automatically create a database if the target db doesn't exist.
 
 
